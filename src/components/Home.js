@@ -1,5 +1,5 @@
 import React, { Component } from 'react'
-import { listen } from '../utils/socketUtils'
+import { socket } from '../utils/socketUtils'
 import './Home.css'
 import { connect } from 'react-redux'
 import { addUser, removeUser, setUsers, storeOwnUser } from '../actions/user'
@@ -8,19 +8,15 @@ import { addMessage, sendMessage } from '../actions/message'
 class App extends Component {
   constructor (props) {
     super(props)
-    this.state = {
-      users: [],
-      messages: [],
-      text: ''
-    }
+    this.state = { text: '' }
   }
 
   componentDidMount () {
     this.props.doStoreOwnUser(randomName())
-    listen('all users').subscribe(users => this.props.doSetUsers(users))
-    listen('new user').subscribe(user => this.props.doAddUser(user))
-    listen('remove user').subscribe(user => this.props.doRemoveUser(user))
-    listen('chat message').subscribe(message => this.props.doAddMessage(message))
+    socket.on('all users', users => this.props.doSetUsers(users))
+    socket.on('new user', user => this.props.doAddUser(user))
+    socket.on('remove user', user => this.props.doRemoveUser(user))
+    socket.on('chat message', message => this.props.doAddMessage(message))
   }
 
   onTextInput = event => {
