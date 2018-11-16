@@ -1,12 +1,11 @@
 import React, { Component } from 'react'
-import { listen, send } from '../utils/socketUtils'
-import * as Rx from 'rxjs'
+import { listen } from '../utils/socketUtils'
 import './Home.css'
-import { PING } from '../epics/messageEpics'
 import { connect } from 'react-redux'
+import { addUser, removeUser, setUsers, storeOwnUser } from '../actions/user'
+import { addMessage, sendMessage } from '../actions/message'
 
 class App extends Component {
-
   constructor (props) {
     super(props)
     this.state = {
@@ -17,49 +16,39 @@ class App extends Component {
   }
 
   componentDidMount () {
-
-    const username$ = Rx.of(randomName())
-    send(username$, 'save username')
-
-    listen('all users').subscribe(users => {
-      console.log('getting all users', users)
-      this.setState({users})
-    })
-    listen('new user').subscribe(user => {
-        console.log('getting new user', user)
-        this.setState(prevState => ({users: [...prevState.users, user]}))
-      }
-    )
-    listen('remove user').subscribe(userId => {
-        console.log('removing user', userId)
-        this.setState(prevState => ({users: prevState.users.filter(u => u.id !== userId)}))
-      }
-    )
+    this.props.doStoreOwnUser(randomName())
+    listen('all users').subscribe(users => this.props.doSetUsers(users))
+    listen('new user').subscribe(user => this.props.doAddUser(user))
+    listen('remove user').subscribe(user => this.props.doRemoveUser(user))
+    listen('chat message').subscribe(message => this.props.doAddMessage(message))
   }
 
   onTextInput = event => {
-    this.setState({text: event.target.value})
+    this.setState({ text: event.target.value })
   }
 
-  onSubmit = () => {
-    this.setState({text: ''})
-    this.props.ping()
+  onSubmit = event => {
+    this.props.onSendMessage(this.state.text)
+    this.setState({ text: '' })
+    event.preventDefault()
   }
 
   render () {
     return (
       <div>
         {this.props.message}
-        <div className='userContainer'>
+        <div className="userContainer">
           <b>Users</b>
-          {this.state.users.map(user => <div key={user.id}>{user.name}</div>)}
+          {this.props.users.map((user, idx) => <div key={idx}>{user.name}</div>)}
         </div>
-        <div className='messageContainer'>
-          <div className='messages'>
-            {this.state.messages.map((msg, idx) => <div key={idx}><b>{msg.from}</b>: {msg.message}</div>)}
+        <div className="messageContainer">
+          <div className="messages">
+            {this.props.messages.map((msg, idx) => <div key={idx}>{msg.from} {msg.message}</div>)}
           </div>
-          <input type="text" id="msgInput" value={this.state.text} onChange={this.onTextInput}/>
-          <button onClick={this.onSubmit}>Send</button>
+          <form onSubmit={this.onSubmit}>
+            <input type="text" id="msgInput" value={this.state.text} onChange={this.onTextInput}/>
+            <button type="submit">Send</button>
+          </form>
         </div>
       </div>
     )
@@ -69,17 +58,25 @@ class App extends Component {
 const randomName = () => {
   let text = ''
   const possible = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789'
-  for (let i = 0; i < 5; i++)
+  for (let i = 0; i < 5; i++) {
     text += possible.charAt(Math.floor(Math.random() * possible.length))
+  }
   return text
 }
 
-const mapStateToProps = ({messages}) => ({
-  messages
+const mapStateToProps = ({ messages, user }) => ({
+  messages: messages.messages,
+  ownName: user.ownName,
+  users: user.users
 })
 
 const mapDispatchToProps = dispatch => ({
-  ping: () => dispatch({type: PING})
+  onSendMessage: message => dispatch(sendMessage(message)),
+  doAddMessage: message => dispatch(addMessage(message)),
+  doStoreOwnUser: username => dispatch(storeOwnUser(username)),
+  doAddUser: user => dispatch(addUser(user)),
+  doSetUsers: users => dispatch(setUsers(users)),
+  doRemoveUser: user => dispatch(removeUser(user))
 })
 
 export default connect(mapStateToProps, mapDispatchToProps)(App)

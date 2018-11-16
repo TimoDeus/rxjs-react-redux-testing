@@ -1,10 +1,11 @@
-import { delay, filter, mapTo } from 'rxjs/operators'
-
-export const PING = 'PING'
-export const PONG = 'PONG'
+import { map, tap } from 'rxjs/operators'
+import { ofType } from 'redux-observable'
+import { socket } from '../utils/socketUtils'
+import { SEND_MSG_REQUEST, SEND_MSG_SUCCESS } from '../actions/message'
 
 export const messageEpic = action$ => action$.pipe(
-  filter(action => action.type === PING),
-  delay(1000), // Asynchronously wait 1000ms then continue
-  mapTo({ type: PONG })
-);
+  ofType(SEND_MSG_REQUEST),
+  map(action => action.payload),
+  tap(message => socket.emit('chat message', message)),
+  map(payload => ({ type: SEND_MSG_SUCCESS, payload }))
+)
