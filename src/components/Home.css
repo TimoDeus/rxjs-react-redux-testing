@@ -1,0 +1,15 @@
+.userContainer {
+  float: left;
+  margin-right: 20px;
+}
+
+.messageContainer {
+  width: 600px;
+  height: 300px;
+  margin-left: 100px;
+}
+.messages {
+  height: 100%;
+  border: solid 1px;
+
+}
