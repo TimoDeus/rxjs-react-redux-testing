@@ -1,5 +1,5 @@
 
-# RxJS v6 + React + Redux | Chat example
+# Socket.io + React + Redux + Redux-Observable
 
-this is just a playground and heavily WIP
+Chat example and playground for different technologies
 
